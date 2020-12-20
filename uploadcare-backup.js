@@ -1,335 +1,419 @@
-var uploadcareFeature = {
-  	productHandle: '',
-    uploadedImage: null,
-    croped: 'free',
-    selectedSize: '',
-    selectedEdge: '',
-    selectedFrame: '',
-    selectedOrientation: '',
-  
-    init: function( settings ) {
-        uploadcareFeature.config = {
-            productImage: $('.product-featured-img'),
-          	inputUploader: $('#input-uploader'),
-          	customUploader: $('#custom-uploader'),
-          	sizeSelector: $('[data-option=size]'),
-          	edgeSelector: $('[data-option="edge-option"]'),
-          	frameSelector: $('[data-option=frame-color]'),
-          	orientationSelector: $('[data-option=orientation]')
-        };
- 
-        // Allow overriding the default config
-        $.extend( uploadcareFeature.config, settings );
-      	
-        uploadcareFeature.setupUploadCare();
-    },
-  
-    setupUploadCare: function() {
 
-        uploadcareFeature.config.customUploader.prop('disabled', true);
+const frameOptions = {
+    'Oak': 'oak',
+    'Cherry': 'cherry',
+    'Walnut': 'walnut'
+};
+// populate the frame size depnding on image size selected
+const sizeOptions = {
+    '12x12': '250x250',
+    '18x18': '300x300',
+    '24x24': '400x400',
+    '12x8': '270x170',
+    '18x12': '400x260',
+    '27x18': '540x340',
+    '8x12': '170x270',
+    '12x18': '260x400',
+    '18x27': '340x540'
+}
 
-        uploadcareFeature.config.customUploader.on('click', function() {
-        	var dialog = uploadcare.openDialog(null, {
-        		publicKey: uploadcareFeature.config.uploadcareKey,
-	          	imagesOnly: uploadcareFeature.config.uploadcareImageOnly,
-	          	crop: uploadcareFeature.croped
-	      	}).done(function(response) {
-	      		response.progress(function(result) {
-	      			console.log(result.progress);
-	                // $('#uploader-placeholder span').html(e.state);
-	                // new uploadcare.Circle('#demo-circle').renderer.setValue(e.progress);
-              	}).fail(function(result) {
-					console.log(result);
-				  // Dialog closed and no file or file group was selected.
-				  // The result argument is either null, or the last selected file.
-				}).done(function(result) {
-	      			console.log(result);
-	      			uploadcareFeature.uploadedImage = result.cdnUrl;
-		            uploadcareFeature.config.productImage.attr('src', result.cdnUrl);
-		            uploadcareFeature.config.productImage.attr('data-srcset', '');
-		            uploadcareFeature.config.productImage.attr('srcset', '');
-		          	
-		          	uploadcareFeature.config.inputUploader.val(result.cdnUrl);
-		          	// populate initial size
-		          	uploadcareFeature.populateSize();
-	      		})
-	      	});
-        });
-
-        uploadcareFeature.config.sizeSelector.on('change', function() {
-          	var size = $(this).children("option:selected").val();
-          	if(size) {
-				uploadcareFeature.config.customUploader.prop('disabled', false);
-          	}
-
-          	switch (uploadcareFeature.productHandle) {
-              	case 'horizontal-canvas-prints': 
-	                uploadcareFeature.onUpdateLandscapeSize(size);
-	                break;
-              	case 'gallery-wrapped-canvas': 
-	                uploadcareFeature.onUpdatePortraitSize(size);
-	                break;
-              	case 'square-canvas-prints': 
-	                uploadcareFeature.onUpdateSquareSize(size);
-	                break;
-	            case 'framed-print-with-mat-board': 
-	                uploadcareFeature.onUpdateFrameBoardSize(size);
-	                break;
-               	case 'framed-canvas-prints': 
-	                uploadcareFeature.onUpdateFrameCanvasSize(size);
-	                break;
-                case 'framed-print': 
-	                uploadcareFeature.onUpdateFrameSize(size);
-	                break;
-                case 'acrylic-prints': 
-	                uploadcareFeature.onUpdateAcrylicSize(size);
-	                break;
-              	default: // 10" wide x 8" tall
-                uploadcareFeature.onUpdateSize(size);
-            }
-        });
-
-        uploadcareFeature.config.edgeSelector.on('change', function() {
-          	var edge = $(this).children("option:selected").val().replace(/\s+/g, '-').toLowerCase();
-          	// uploadcareFeature.selectedEdge = edge;
-          	uploadcareFeature.config.productImage.parent('div').attr('data-edge', edge);
-        });
-
-        uploadcareFeature.config.frameSelector.on('change', function() {
-          	var frame = $(this).children("option:selected").val().replace(/\s+/g, '-').toLowerCase();
-          	// uploadcareFeature.selectedFrame = frame
-          	uploadcareFeature.config.productImage.parent('div').attr('data-frame', frame);
-        });
-
-        uploadcareFeature.config.orientationSelector.on('change', function() {
-          	var orientation = $(this).children("option:selected").val();
-          	switch (orientation) { 
-              case '16" wide x 24" tall (photo size)': 
-                uploadcareFeature.selectedOrientation = 'portrait';
-                break;
-                default: // 24" wide x 16" tall (photo size)
-                uploadcareFeature.selectedOrientation = 'landscape';
-            }
-
-            uploadcareFeature.config.productImage.parent('div').attr('data-orientation', uploadcareFeature.selectedOrientation);
-        });
-    },
-  	
-    onUpdateLandscapeSize: function( callback ) { 
-        switch (callback) { 
-          case '14" wide x 11" tall': 
-            uploadcareFeature.selectedSize = 'mm14x11';
-            uploadcareFeature.croped = '14:11';
-            break;
-          case '16" wide x 12" tall': 
-            uploadcareFeature.selectedSize = 'mm16x12';
-            uploadcareFeature.croped = '4:3';
-            break;
-          case '18" wide x 12" tall': 
-            uploadcareFeature.selectedSize = 'mm18x12';
-            uploadcareFeature.croped = '3:2';
-            break;    
-          case '20" wide x 16" tall': 
-            uploadcareFeature.selectedSize = 'mm20x16';
-            uploadcareFeature.croped = '5:4';
-            break;
-          case '24" wide x 16" tall': 
-            uploadcareFeature.selectedSize = 'mm24x16';
-            uploadcareFeature.croped = '3:2';
-            break;
-          case '24" wide x 18" tall': 
-            uploadcareFeature.selectedSize = 'mm24x18';
-            uploadcareFeature.croped = '4:3';
-            break;
-          case '36" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm36x24';
-            uploadcareFeature.croped = '3:2';
-            break;
-          case '48" wide x 32" tall': 
-            uploadcareFeature.selectedSize = 'mm48x32';
-            uploadcareFeature.croped = '3:2';
-            break;
-          default: // 10" wide x 8" tall
-            uploadcareFeature.selectedSize = 'mm10x8';
-            uploadcareFeature.croped = '5:4';
-        }
-      	uploadcareFeature.populateSize();
-    },
-  
-  	onUpdatePortraitSize: function( callback ) { 
-        switch (callback) { 
-          case '11" wide x 14" tall': 
-            uploadcareFeature.selectedSize = 'mm11x14';
-            uploadcareFeature.croped = '11:14';
-            break;
-          case '12" wide x 16" tall': 
-            uploadcareFeature.selectedSize = 'mm12x16';
-            uploadcareFeature.croped = '3:4';
-            break;
-          case '12" wide x 18" tall': 
-            uploadcareFeature.selectedSize = 'mm12x18';
-            uploadcareFeature.croped = '2:3';
-            break;    
-          case '16" wide x 20" tall': 
-            uploadcareFeature.selectedSize = 'mm16x20';
-            uploadcareFeature.croped = '4:5';
-            break;
-          case '16" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm16x24';
-            uploadcareFeature.croped = '2:3';
-            break;
-          case '18" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm18x24';
-            uploadcareFeature.croped = '3:4';
-            break;
-          case '24" wide x 36" tall': 
-            uploadcareFeature.selectedSize = 'mm24x36';
-            uploadcareFeature.croped = '2:3';
-            break;
-          case '32" wide x 48" tall': 
-            uploadcareFeature.selectedSize = 'mm32x48';
-            uploadcareFeature.croped = '2:3';
-            break;
-          default: // 8" wide x 10" tall
-            uploadcareFeature.selectedSize = 'mm8x10';
-            uploadcareFeature.croped = '4:5';
-        }
-      	uploadcareFeature.populateSize();
-    },
-  
-  	onUpdateSquareSize: function( callback ) { 
-        switch (callback) { 
-          case '16" x 16"': 
-            uploadcareFeature.selectedSize = 'mm16x16';
-            uploadcareFeature.croped = '1:1';
-            break;
-          case '24" x 24"': 
-            uploadcareFeature.selectedSize = 'mm24x24';
-            uploadcareFeature.croped = '1:1';
-            break;
-          default: // 12" x 12"
-            uploadcareFeature.selectedSize = 'mm12x12';
-            uploadcareFeature.croped = '1:1';
-        }
-      	uploadcareFeature.populateSize();
-    },
-
-    onUpdateFrameBoardSize: function( callback ) { 
-        switch (callback) { 
-          case '24" wide x 16" tall (photo size)': 
-            uploadcareFeature.selectedSize = 'mm24x16';
-            uploadcareFeature.croped = '3:2';
-            break;
-          default: // 16" wide x 24" tall (photo size)
-            uploadcareFeature.selectedSize = 'mm16x24';
-            uploadcareFeature.croped = '2:3';
-        }
-      	uploadcareFeature.populateSize();
-    },
-
-  	onUpdateFrameCanvasSize: function( callback ) { 
-  		switch (callback) { 
-          case '16" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm16x24';
-            uploadcareFeature.croped = '2:3';
-            break;
-          case '24" wide x 16" tall': 
-            uploadcareFeature.selectedSize = 'mm24x16';
-            uploadcareFeature.croped = '3:2';
-            break;
-           case '24" x 24"': 
-            uploadcareFeature.selectedSize = 'mm24x24';
-            uploadcareFeature.croped = '1:1';
-            break;
-           case '24" wide x 36" tall': 
-            uploadcareFeature.selectedSize = 'mm24x36';
-            uploadcareFeature.croped = '2:3';
-            break;
-           case '36" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm36x24';
-            uploadcareFeature.croped = '3:2';
-            break;
-          default: // 16" x 16"
-            uploadcareFeature.selectedSize = 'mm16x16';
-            uploadcareFeature.croped = '1:1';
-        }
-      	uploadcareFeature.populateSize();
-  	},
-
-	onUpdateFrameSize: function( callback ) { 
-		switch (callback) { 
-          case '20" wide x 16" tall': 
-            uploadcareFeature.selectedSize = 'mm20x16';
-            uploadcareFeature.croped = '5:4';
-            break;
-          case '18" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm18x24';
-            uploadcareFeature.croped = '3:4';
-            break;
-           case '24" wide x 18" tall': 
-            uploadcareFeature.selectedSize = 'mm24x18';
-            uploadcareFeature.croped = '4:3';
-            break;
-          case '24" wide x 32" tall': 
-            uploadcareFeature.selectedSize = 'mm24x32';
-            uploadcareFeature.croped = '2:3';
-            break;
-           case '32" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm32x24';
-            uploadcareFeature.croped = '3:2';
-            break;
-          default: // 16" wide x 20" tall
-            uploadcareFeature.selectedSize = 'mm16x20';
-            uploadcareFeature.croped = '4:5';
-        }
-      	uploadcareFeature.populateSize();
-    },
-
-	onUpdateAcrylicSize: function( callback ) {
-		switch (callback) { 
-          case '24" wide x 16" tall': 
-            uploadcareFeature.selectedSize = 'mm24x16';
-            uploadcareFeature.croped = '3:2';
-            break;
-          case '20" wide x 30" tall': 
-            uploadcareFeature.selectedSize = 'mm20x30';
-            uploadcareFeature.croped = '2:3';
-            break;
-            case '30" wide x 20" tall': 
-            uploadcareFeature.selectedSize = 'mm30x20';
-            uploadcareFeature.croped = '3:2';
-            break;
-          case '24" wide x 36" tall': 
-            uploadcareFeature.selectedSize = 'mm24x36';
-            uploadcareFeature.croped = '2:3';
-            break;
-          case '36" wide x 24" tall': 
-            uploadcareFeature.selectedSize = 'mm36x24';
-            uploadcareFeature.croped = '3:2';
-            break  
-          default: // 16" wide x 24" tall
-            uploadcareFeature.selectedSize = 'mm16x24';
-            uploadcareFeature.croped = '2:3';
-        }
-      	uploadcareFeature.populateSize();
-	},
-
-  	onUpdateSize: function( callback ) { 
-        if (uploadcareFeature.uploadedImage !== null) {
-          	console.log('unhandled size');
-        }
-    },
-  
-  	populateSize: function() {
-		// uploadcareFeature.config.productImage.parent('div').attr('data-size', uploadcareFeature.selectedSize);
-	}
+const formatOptions = {
+    Landscape: '3:2', //'16:9',
+    Portrait: '2:3', // 8:13
+    Square: '1:1'
 };
 
-uploadcareFeature.productHandle = productHandle;
+var uploadcareFeature = {
+    productHandled: productHandle,
+    uploadedImage: null,
+    selectedSize: '',
+    selectedFrame: '',
+    selectedFormat: '',
+
+    init: function(settings) {
+        uploadcareFeature.config = {
+            // default var
+            currentFrame: '',
+            currentSize: '',
+            currentFormat: '',
+            currentOverlay: '',
+
+            resetFiled: $('#reset-fields'),
+            // upload widget
+            uploader: $('[role=uploadcare-uploader]'),
+            uploadCareButton: $('.uploadcare--widget__button'),
+            customUploader: $('#customUploader'),
+            // product image
+            productImage: $('.product-featured-media'),
+            productImageWrapper: $('.product-single__media'),
+            // varient options
+            sizeSelector: $('[data-option=size]'),
+            frameSelector: $('[data-option=frame]'),
+            formatSelector: $('[data-option="format"]'),
+            // buttons
+            addToCartButton: $('[type=submit]'),
+            googlePayButton: $('[data-testid="GooglePay-button"]'),
+        };
+
+        // Allow overriding the default config
+        $.extend(uploadcareFeature.config, settings);
+
+        // setup uploadcare key
+        UPLOADCARE_MANUAL_START = uploadcareFeature.config.uploadcareManual;
+        UPLOADCARE_DO_NOT_STORE = uploadcareFeature.config.uploadcareStore;
+        UPLOADCARE_PUBLIC_KEY = uploadcareFeature.config.uploadcareKey;
+        
+        // setup uploadcare environment
+        uploadcareFeature.setupUploadCare();
+    },
+
+    setupUploadCare: function() {
+        // set initial frame
+        // uploadcareFeature.setFrame(frameOptions[uploadcareFeature.config.currentFrame]);
+
+        
+        uploadcareFeature.resetFields();
+        // frame change event listener
+        uploadcareFeature.config.formatSelector.on('change', function(e) {
+            var selectedForamt = $(this).children("option:selected").val();
+            if (selectedForamt) {
+                uploadcareFeature.setFormat(formatOptions[selectedForamt]);
+                uploadcareFeature.setSize(sizeOptions[uploadcareFeature.config.sizeSelector.find('option:eq(1)').val()]);
+                uploadcareFeature.populateStyle();
+            }
+        });
+
+        // size change event listener
+        uploadcareFeature.config.sizeSelector.on('change', function(e) {
+            var selectedSize = $(this).children("option:selected").val();
+            if (selectedSize) {
+                uploadcareFeature.setSize(sizeOptions[selectedSize]);
+                uploadcareFeature.populateStyle();
+            }
+        });
+
+        // frame change event listener
+        uploadcareFeature.config.frameSelector.on('change', function(e) {
+            var selectedFrame = $(this).children("option:selected").val();
+            if (selectedFrame) {
+                uploadcareFeature.setFrame(frameOptions[selectedFrame]);
+                uploadcareFeature.populateStyle();
+            }
+        });
+
+        // uploadcareFeature.config.resetFiled.on('click', function(e) {
+        //     var uri = window.location.href.toString();
+        //     if (uri.indexOf("?") > 0) {
+        //         var clean_uri = uri.substring(0, uri.indexOf("?"));
+        //         window.history.replaceState({}, document.title, clean_uri);
+        //     }
+        //     // location.reload(true);
+        // });
+    },
+
+    resetFields: function() {
+        // reset all actions
+        uploadcareFeature.config.uploadCareButton.prop('disabled', true);
+        uploadcareFeature.config.addToCartButton.prop('disabled', true);
+        uploadcareFeature.config.googlePayButton.prop('disabled', true);
+
+        // reset all selectors
+        uploadcareFeature.config.sizeSelector.prop('disabled', true);
+        uploadcareFeature.config.frameSelector.prop('disabled', true);
+    },
+
+    setFormat: function(selectedFormat) {
+        uploadcareFeature.config.currentFormat = selectedFormat;
+
+        // populate size option filtering
+        uploadcareFeature.populateSizes();
+    },
+
+    getFormat: function () {
+        return uploadcareFeature.config.currentFormat;
+    },
+
+    populateSizes: function() {
+        // initialize uploadcare
+        uploadcareFeature.initializeUpload();
+
+        // overide options
+        var options = [];
+        switch (uploadcareFeature.getFormat()) { 
+            case '2:3': // portrait
+                 options = [
+                    {"name": '12x8'},
+                    {"name": '18x12'},
+                    {"name": '27x18'}
+                ];
+            break;
+            case '3:2': // landscape
+                options = [
+                    {"name": '8x12'},
+                    {"name": '12x18'},
+                    {"name": '18x27'}
+                ];
+
+            break;
+            default: // sqaure
+                options = [
+                    {"name": '12x12'},
+                    {"name": '18x18'},
+                    {"name": '24x24'}
+                ];
+        }
+
+        // set empty initial value
+        uploadcareFeature.config.sizeSelector.empty().append($('<option></option>').attr('value', '').text('Pick a size'));
+
+        // loop trough
+        $.each(options, function(key, entry) {
+          uploadcareFeature.config.sizeSelector.append($('<option></option>').attr('value', entry.name).text(entry.name));
+        });
+
+        uploadcareFeature.config.sizeSelector.val(uploadcareFeature.getSize()).attr('selected', true);
+        // triger event
+        uploadcareFeature.config.sizeSelector.trigger('change');
+    },
+
+    initializeUpload: function() {
+
+        // overrides uploadcare settings
+        uploadcare.start({
+            crop: uploadcareFeature.getFormat() // overrides UPLOADCARE_CROP
+        });
+
+        // assign widget
+        const widget = uploadcare.SingleWidget(uploadcareFeature.config.uploader);
+
+        // validate uploadcare
+        widget.validators.push(uploadcareFeature.minResolution(800, 1200));
+
+        // listen to uploadcare complate event
+        widget.onUploadComplete(function (fileInfo) {
+
+            // set uploadcare image
+            uploadcareFeature.uploadedImage = fileInfo.cdnUrl;
+
+            // disable selecting new format
+            uploadcareFeature.config.formatSelector.prop('disabled', true);
+
+            // enable selecting size
+            uploadcareFeature.config.sizeSelector.prop('disabled', false);
+
+            // populate styles
+            uploadcareFeature.populateStyle();
+        });
+
+        // unsubscribe to widget instance
+        widget.onUploadComplete();
+        widget.onUploadComplete.remove();
+    },
+
+    minResolution: function(width, height) {
+        return function(fileInfo) {
+            var imageInfo = fileInfo.originalImageInfo;
+            var resolution = width * height;
+            if (imageInfo !== null) {
+                if (imageInfo.width * imageInfo.height < resolution) {
+                    throw new Error('resolution');
+                }
+            }
+        };
+    }, 
+
+    setSize: function(selectedSize) {
+        uploadcareFeature.config.currentSize = selectedSize;
+
+        // disable selecting new size
+        // uploadcareFeature.config.sizeSelector.prop('disabled', true);
+
+        // enable selecting new frame
+        uploadcareFeature.config.frameSelector.prop('disabled', false);
+    },
+
+    getSize: function () {
+        return uploadcareFeature.config.currentSize;
+    },
+
+    setFrame: function(selectedFrame) {
+        uploadcareFeature.config.currentFrame = selectedFrame;
+
+        // enable buttons
+        uploadcareFeature.config.addToCartButton.prop('disabled', false);
+        uploadcareFeature.config.googlePayButton.prop('disabled', false);
+        // if ($('#reset-fields').length) {
+        //     $('#reset-fields').remove();
+        // }
+        // $('<button type="button" id="reset-fields">Reset</button>').prependTo('.product-form__controls-group--submit');
+    },
+
+    getFrame: function () {
+        return uploadcareFeature.config.currentFrame;
+    },
+
+    setOverlay: function(overlaySelected) {
+        uploadcareFeature.config.currentOverlay = overlaySelected;
+    },
+
+    getOverlay: function() {
+        return uploadcareFeature.config.currentOverlay;
+    },
+
+    populateStyle: function() {
+        // precheck if there is an upload image
+        if (uploadcareFeature.uploadedImage) {
+            // set initial upload without size options
+            var uploadCareImage = uploadcareFeature.uploadedImage + '-/resize/';
+
+            // populate upload with custom size
+            if (uploadcareFeature.getSize()) {
+                uploadCareImage += uploadcareFeature.getSize() + '/-/stretch/fill/';    
+            }
+            
+            // populate upload with custom frames
+            if (uploadcareFeature.getFrame()) {
+
+                // check selected format
+                switch(uploadcareFeature.getFormat()) {
+                    case '2:3': // portrait
+                        // check selected sizes
+                        switch(uploadcareFeature.getSize()) {
+                            case '400x260':
+                                // check selected frames
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                    uploadcareFeature.setOverlay('UUID for cherry 400x260 size');
+                                    break;
+                                    case 'walnut':
+                                    uploadcareFeature.setOverlay('UUID for walnut 400x260 size');
+                                    break;
+                                    default: // oak
+                                    uploadcareFeature.setOverlay('UUID for oak 400x260 size');
+                                }
+                            break;
+                            case '540x340':
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                    uploadcareFeature.setOverlay('UUID for cherry 540x340 size');
+                                    break;
+                                    case 'walnut':
+                                    uploadcareFeature.setOverlay('UUID for walnut 540x340 size');
+                                    break;
+                                    default: // oak
+                                    uploadcareFeature.setOverlay('UUID for oak 540x340 size');
+                                }
+                            break;
+                            default: // 270x170
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                    uploadcareFeature.setOverlay('UUID for cherry 270x170 size');
+                                    break;
+                                    case 'walnut':
+                                    uploadcareFeature.setOverlay('UUID for walnut 270x170 size');
+                                    break;
+                                    default: // oak
+                                    uploadcareFeature.setOverlay('UUID for oak 270x170 size');
+                                }
+                        }
+                    break;
+                    case '3:2': // landscape
+                        switch(uploadcareFeature.getSize()) {
+                            case '260x400':
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                    uploadcareFeature.setOverlay('UUID for cherry 260x400 size');
+                                    break;
+                                    case 'walnut':
+                                    uploadcareFeature.setOverlay('UUID for walnut 260x400 size');
+                                    break;
+                                    default: // oak
+                                    uploadcareFeature.setOverlay('UUID for oak 260x400 size');
+                                }
+                            break;
+                            case '340x540':
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                    uploadcareFeature.setOverlay('UUID for cherry 340x540 size');
+                                    break;
+                                    case 'walnut':
+                                    uploadcareFeature.setOverlay('UUID for walnut 340x540 size');
+                                    break;
+                                    default: // oak
+                                    uploadcareFeature.setOverlay('UUID for oak 340x540 size');
+                                }
+                            break;
+                            default: // 170x270
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                    uploadcareFeature.setOverlay('UUID for cherry 170x270 size');
+                                    break;
+                                    case 'walnut':
+                                    uploadcareFeature.setOverlay('UUID for walnut 170x270 size');
+                                    break;
+                                    default: // oak
+                                    uploadcareFeature.setOverlay('UUID for oak 170x270 size');
+                                }
+
+                        }
+                    break;
+                    default: // 1:1
+                        switch(uploadcareFeature.getSize()) {
+                            case '300x300':
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                        uploadcareFeature.setOverlay('547558d3-e1f8-4d73-a7a4-d95c71e7d983');
+                                    break;
+                                    case 'walnut':
+                                        uploadcareFeature.setOverlay('9791d77e-6d60-42fc-94d5-07e6c00445bb');
+                                    break;
+                                    default: // oak
+                                        uploadcareFeature.setOverlay('2fe62a17-fe41-46e8-969b-cf8dc7954131');
+                                }
+                            break;
+                            case '400x400':
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                        uploadcareFeature.setOverlay('c44e7060-fdbc-4a5b-bb85-38e969447dea');
+                                    break;
+                                    case 'walnut':
+                                        uploadcareFeature.setOverlay('240c6f6a-ef7a-435a-8344-32d65ad95548');
+                                    break;
+                                    default: // oak
+                                        uploadcareFeature.setOverlay('82041040-4239-4376-8a36-185cebd58490');
+                                }
+                            break;
+                            default: // 250x250
+                                switch(uploadcareFeature.getFrame()) {
+                                    case 'cherry':
+                                        uploadcareFeature.setOverlay('1d11cdc0-8c5e-4e13-a446-a2b8ae341467');
+                                    break;
+                                    case 'walnut':
+                                        uploadcareFeature.setOverlay('b8754a2f-2d2d-4634-b018-58c99402417c');
+                                    break;
+                                    default: // oak
+                                        uploadcareFeature.setOverlay('b8a46eec-e0af-4e50-92c0-7efc3da32ead');
+                                }
+
+                        }
+                }
+                
+                uploadCareImage += '-/overlay/' + uploadcareFeature.getOverlay() + '/'
+            }
+
+            // https://ucarecdn.com/30ca702e-0627-4c70-a256-ec79304c4b11/-/crop/1158x1156/697,0/-/preview/-/resize/400x400/-/stretch/fill/-/overlay/82041040-4239-4376-8a36-185cebd58490/
+
+            uploadcareFeature.config.productImage.attr('src', uploadCareImage);
+            uploadcareFeature.config.productImage.attr('data-srcset', '');
+            uploadcareFeature.config.productImage.attr('srcset', '');
+        }
+        
+    }
+};
+
 
 uploadcareFeature.init({
-    uploadcareKey: '8c13765969bf80094f06',
-  	uploadcareImageOnly: true,
-  	uploadcareClearable: false,
-  	uploadcareCanPreview: false
+    uploadcareKey: '6f6b3bed9c030dc28166',
+    uploadcareManual: true,
+    uploadcareStore: true
 });
